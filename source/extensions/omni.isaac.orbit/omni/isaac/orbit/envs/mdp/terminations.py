@@ -137,3 +137,22 @@ def illegal_contact(env: RLTaskEnv, threshold: float, sensor_cfg: SceneEntityCfg
     return torch.any(
         torch.max(torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1), dim=1)[0] > threshold, dim=1
     )
+
+
+def feet_close_to_base(env: RLTaskEnv, threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Terminate when the feet are close to the base."""
+    asset: Articulation = env.scene[asset_cfg.name]
+    base_pos_w = asset.data.root_pos_w[:, 0:3]
+    base_pos_w = torch.unsqueeze(base_pos_w, axis=1)
+    # 
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    feet_pos_w = contact_sensor.data.pos_w[:, sensor_cfg.body_ids, 0:3]
+    # 
+    feet_pos_b = feet_pos_w - base_pos_w
+
+    feet_xypose_b = feet_pos_b[..., :2].clone().view(-1, 2)  # xy position
+    feet_xydist_b = torch.linalg.norm(feet_xypose_b, dim=-1)  # xy distance
+    foot_xydist_b_per_env = feet_xydist_b.view(env.num_envs, -1)  # 每个环境中的每个脚的xy距离: n*4
+    
+    # check if any contact force exceeds the threshold
+    return torch.min(foot_xydist_b_per_env, dim=-1)[0] < threshold

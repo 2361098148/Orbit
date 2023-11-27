@@ -87,6 +87,7 @@ class UniformVelocityCommandGeneratorCfg(CommandGeneratorBaseCfg):
         lin_vel_y: tuple[float, float] = MISSING  # min max [m/s]
         ang_vel_z: tuple[float, float] = MISSING  # min max [rad/s]
         heading: tuple[float, float] = MISSING  # min max [rad]
+        min_vel: float = MISSING  # min
 
     ranges: Ranges = MISSING
     """Distribution ranges for the velocity commands."""

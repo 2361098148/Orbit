@@ -70,6 +70,7 @@ def main():
     log_root_path = os.path.abspath(log_root_path)
     print(f"[INFO] Loading experiment from directory: {log_root_path}")
     resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
+    # resume_path = "/home/ubuntu2004/DATA/Projects/IsaacSim/Orbit-devel/Orbit/logs/rsl_rl/relml_flat/2023-11-27_12-52-06/model_1999.pt"
     print(f"[INFO]: Loading model checkpoint from: {resume_path}")
 
     # load previously trained model

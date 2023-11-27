@@ -94,7 +94,7 @@ def joint_torques_l2(env: RLTaskEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg(
     """Penalize joint torques applied on the articulation using L2-kernel."""
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
-    return torch.sum(torch.square(asset.data.applied_torque), dim=1)
+    return torch.sum(torch.square(asset.data.applied_torque[:, asset.ordered_actuator_index]), dim=1)
 
 
 def joint_vel_l1(env: RLTaskEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
@@ -115,7 +115,7 @@ def joint_acc_l2(env: RLTaskEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("rob
     """Penalize joint accelerations on the articulation using L2-kernel."""
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
-    return torch.sum(torch.square(asset.data.joint_acc), dim=1)
+    return torch.sum(torch.square(asset.data.joint_acc[:, asset.ordered_actuator_index]), dim=1)
 
 
 def joint_pos_limits(env: RLTaskEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
@@ -231,3 +231,19 @@ def track_ang_vel_z_exp(
     # compute the error
     ang_vel_error = torch.square(env.command_manager.command[:, 2] - asset.data.root_ang_vel_b[:, 2])
     return torch.exp(-ang_vel_error / std**2)
+
+
+"""
+Standing rewards.
+"""
+
+
+def stand_still(env: RLTaskEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Reward for standing still."""
+    # extract the used quantities (to enable type-hinting)
+    asset: Articulation = env.scene[asset_cfg.name]
+    # cal the zero cmd envids
+    zero_cmd_mask = (torch.norm(env.command_manager.command[:, :2], dim=1) < 0.1) * (torch.abs(env.command_manager.command[:, 2]) < 0.1)
+    # compute the joint movement
+    unstable_joint_move = torch.sum(torch.abs(asset.data.joint_pos[:, asset.ordered_actuator_index] - asset.data.default_joint_pos[:, asset.ordered_actuator_index]), dim=1)
+    return unstable_joint_move * zero_cmd_mask

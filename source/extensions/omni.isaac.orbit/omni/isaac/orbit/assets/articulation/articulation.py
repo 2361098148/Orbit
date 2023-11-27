@@ -361,7 +361,12 @@ class Articulation(RigidObject):
 
     def _initialize_impl(self):
         # -- articulation
-        self._root_view = ArticulationView(self.cfg.prim_path, reset_xform_properties=False)
+        self._root_view = ArticulationView(self.cfg.prim_path+"/base", reset_xform_properties=False)
+
+        # if "Relml" in self.cfg.prim_path:
+        #     self._root_view = ArticulationView(self.cfg.prim_path+"/base", reset_xform_properties=False)
+        # else:
+        #     self._root_view = ArticulationView(self.cfg.prim_path, reset_xform_properties=False)
         # Hacking the initialization of the articulation view.
         # reason: The default initialization of the articulation view is not working properly as it tries to create
         # default actions that is not possible within the post-play callback.
@@ -532,6 +537,22 @@ class Articulation(RigidObject):
                 "Not all actuators are configured! Total number of actuated joints not equal to number of"
                 f" joints available: {total_act_joints} != {self.num_joints}."
             )
+
+        # order actuator_index
+        ordered_actuator_names = ['a1_dof1', 'a1_dof2', 'a1_dof3',
+                                  'a2_dof1', 'a2_dof2', 'a2_dof3',
+                                  'a3_dof1', 'a3_dof2', 'a3_dof3',
+                                  'a4_dof1', 'a4_dof2', 'a4_dof3',]
+        ordered_actuator_index = []
+        for i in range(len(ordered_actuator_names)):
+            for group in self.actuators.values():
+                actuators_names = group.joint_names
+                actuators_index = group.joint_indices
+
+                if ordered_actuator_names[i] in actuators_names:
+                    # get the index of the ordered actuator
+                    ordered_actuator_index.append(actuators_index[actuators_names.index(ordered_actuator_names[i])])
+        self.ordered_actuator_index = ordered_actuator_index
 
     def _apply_actuator_model(self):
         """Processes joint commands for the articulation by forwarding them to the actuators.

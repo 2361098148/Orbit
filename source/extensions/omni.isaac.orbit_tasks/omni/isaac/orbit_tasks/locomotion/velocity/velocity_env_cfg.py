@@ -68,7 +68,7 @@ class MySceneCfg(InteractiveSceneCfg):
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
     )
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True, track_pose=True)
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -85,7 +85,8 @@ class MySceneCfg(InteractiveSceneCfg):
 class ActionsCfg:
     """Action specifications for the MDP."""
 
-    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5, use_default_offset=True)
+    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*dof1", ".*dof2", ".*dof3"], 
+                                           scale=0.5, use_default_offset=True)
 
 
 @configclass
@@ -160,14 +161,15 @@ class RandomizationCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-3.14, 3.14)},
+            "pose_range": {"x": (-0., 0.), "y": (-0., 0.), "z": (-0.1, 0.1), 
+                           "pitch": (-0.2, 0.2), "roll": (-0.2, 0.2), "yaw": (-3.14, 3.14)},
             "velocity_range": {
-                "x": (-0.5, 0.5),
-                "y": (-0.5, 0.5),
-                "z": (-0.5, 0.5),
-                "roll": (-0.5, 0.5),
-                "pitch": (-0.5, 0.5),
-                "yaw": (-0.5, 0.5),
+                "x": (-0., 0.),
+                "y": (-0., 0.),
+                "z": (-0., 0.),
+                "roll": (-0., 0.),
+                "pitch": (-0., 0.),
+                "yaw": (-0., 0.),
             },
         },
     )
@@ -176,7 +178,7 @@ class RandomizationCfg:
         func=mdp.reset_joints_by_scale,
         mode="reset",
         params={
-            "position_range": (0.5, 1.5),
+            "position_range": (0.9, 1.1),
             "velocity_range": (0.0, 0.0),
         },
     )
@@ -216,6 +218,8 @@ class RewardsCfg:
     # -- optional penalties
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
+    # --stand still
+    stand_still = RewTerm(func=mdp.stand_still, weight=-5.0)
 
 
 @configclass
@@ -223,9 +227,17 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    base_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
+    # base_contact = DoneTerm(
+    #     func=mdp.illegal_contact,
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
+    # )
+    base_height = DoneTerm(
+        func=mdp.base_height,
+        params={"minimum_height": 0.4},
+    )
+    feet_close_to_base = DoneTerm(
+        func=mdp.feet_close_to_base,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*MidLeg4"), "threshold": 0.6},
     )
 
 
@@ -258,7 +270,7 @@ class LocomotionVelocityRoughEnvCfg(RLTaskEnvCfg):
         heading_command=True,
         debug_vis=True,
         ranges=UniformVelocityCommandGeneratorCfg.Ranges(
-            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
+            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi), min_vel=0.05
         ),
     )
     # MDP settings
