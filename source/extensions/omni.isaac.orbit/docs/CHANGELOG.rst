@@ -1,6 +1,48 @@
 Changelog
 ---------
 
+0.9.48 (2023-11-24)
+~~~~~~~~~~~~~~~~~~~
+
+Fixed
+^^^^^
+
+* Fixed initialization of drift in the :class:`omni.isaac.orbit.sensors.RayCasterCamera` class.
+
+
+0.9.47 (2023-11-24)
+~~~~~~~~~~~~~~~~~~~
+
+Fixed
+^^^^^
+
+* Automated identification of the root prim in the :class:`omni.isaac.orbit.assets.RigidObject` and
+  :class:`omni.isaac.orbit.assets.Articulation` classes. Earlier, the root prim was hard-coded to
+  the spawn prim path. Now, the class searches for the root prim under the spawn prim path.
+
+
+0.9.46 (2023-11-24)
+~~~~~~~~~~~~~~~~~~~
+
+Fixed
+^^^^^
+
+* Fixed a critical issue in the asset classes with writing states into physics handles.
+  Earlier, the states were written over all the indices instead of the indices of the
+  asset that were being updated. This caused the physics handles to refresh the states
+  of all the assets in the scene, which is not desirable.
+
+
+0.9.45 (2023-11-24)
+~~~~~~~~~~~~~~~~~~~
+
+Added
+^^^^^
+
+* Added :class:`omni.isaac.orbit.command_generators.UniformPoseCommandGenerator` to generate
+  poses in the asset's root frame by uniformly sampling from a given range.
+
+
 0.9.44 (2023-11-16)
 ~~~~~~~~~~~~~~~~~~~
 

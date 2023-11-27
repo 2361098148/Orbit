@@ -9,8 +9,10 @@ import torch
 from typing import TYPE_CHECKING, Sequence
 
 import carb
+import omni.isaac.core.utils.prims as prim_utils
 import omni.physics.tensors.impl.api as physx
 from omni.isaac.core.prims import RigidPrimView
+from pxr import UsdPhysics
 
 import omni.isaac.orbit.utils.math as math_utils
 import omni.isaac.orbit.utils.string as string_utils
@@ -172,8 +174,10 @@ class RigidObject(AssetBase):
             env_ids: Environment indices. If :obj:`None`, then all indices are used.
         """
         # resolve all indices
+        physx_env_ids = env_ids
         if env_ids is None:
             env_ids = slice(None)
+            physx_env_ids = self._ALL_INDICES
         # note: we need to do this here since tensors are not set into simulation until step.
         # set into internal buffers
         self._data.root_state_w[env_ids, :7] = root_pose.clone()
@@ -181,7 +185,7 @@ class RigidObject(AssetBase):
         root_poses_xyzw = self._data.root_state_w[:, :7].clone()
         root_poses_xyzw[:, 3:] = math_utils.convert_quat(root_poses_xyzw[:, 3:], to="xyzw")
         # set into simulation
-        self.root_physx_view.set_transforms(root_poses_xyzw, indices=self._ALL_INDICES)
+        self.root_physx_view.set_transforms(root_poses_xyzw, indices=physx_env_ids)
 
     def write_root_velocity_to_sim(self, root_velocity: torch.Tensor, env_ids: Sequence[int] | None = None):
         """Set the root velocity over selected environment indices into the simulation.
@@ -191,13 +195,15 @@ class RigidObject(AssetBase):
             env_ids: Environment indices. If :obj:`None`, then all indices are used.
         """
         # resolve all indices
+        physx_env_ids = env_ids
         if env_ids is None:
             env_ids = slice(None)
+            physx_env_ids = self._ALL_INDICES
         # note: we need to do this here since tensors are not set into simulation until step.
         # set into internal buffers
         self._data.root_state_w[env_ids, 7:] = root_velocity.clone()
         # set into simulation
-        self.root_physx_view.set_velocities(self._data.root_state_w[:, 7:], indices=self._ALL_INDICES)
+        self.root_physx_view.set_velocities(self._data.root_state_w[:, 7:], indices=physx_env_ids)
 
     """
     Operations - Setters.
@@ -266,11 +272,24 @@ class RigidObject(AssetBase):
     """
 
     def _initialize_impl(self):
+        # find articulation root prims
+        asset_prim_path = prim_utils.find_matching_prim_paths(self.cfg.prim_path)[0]
+        root_prims = prim_utils.get_all_matching_child_prims(
+            asset_prim_path, predicate=lambda a: prim_utils.get_prim_at_path(a).HasAPI(UsdPhysics.RigidBodyAPI)
+        )
+        if len(root_prims) != 1:
+            raise RuntimeError(
+                f"Failed to find a single rigid body when resolving '{self.cfg.prim_path}'."
+                f" Found multiple '{root_prims}' under '{asset_prim_path}'."
+            )
+        # resolve articulation root prim back into regex expression
+        root_prim_path = prim_utils.get_prim_path(root_prims[0])
+        root_prim_path_expr = self.cfg.prim_path + root_prim_path[len(asset_prim_path) :]
         # -- object views
-        self._root_view = RigidPrimView(self.cfg.prim_path, reset_xform_properties=False)
+        self._root_view = RigidPrimView(root_prim_path_expr, reset_xform_properties=False)
         self._root_view.initialize()
         # log information about the articulation
-        carb.log_info(f"Rigid body initialized at: {self.cfg.prim_path}")
+        carb.log_info(f"Rigid body initialized at: {self.cfg.prim_path} with root '{root_prim_path_expr}'.")
         carb.log_info(f"Number of bodies (orbit): {self.num_bodies}")
         carb.log_info(f"Body names (orbit): {self.body_names}")
         # create buffers
