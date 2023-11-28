@@ -53,11 +53,13 @@ RELML_CFG = ArticulationCfg(
         joint_vel={".*": 0.0},
     ),
     soft_joint_pos_limit_factor=0.9,
+    # 侧电机额定输出转矩375，额定输出转速3.98rad/s，峰值扭矩472
+    # 主丝杠额定输出力9800N，额定输出速度0.0167m/s(24v),0.0333m/s(48v)，峰值力2.9295e4，这里选择丝杠效率为0.94，电机扭矩(8.3N.M,24.8N.M),丝杠导程5mm
     actuators={
         "side_legs": DCMotorCfg(
             joint_names_expr=[".*dof1", ".*dof3"],
             effort_limit=375,
-            saturation_effort=375,
+            saturation_effort=375,  # 472
             velocity_limit=3.98,
             stiffness=200.0,
             damping=5,
@@ -66,7 +68,7 @@ RELML_CFG = ArticulationCfg(
             joint_names_expr=[".*dof2"],
             effort_limit=10000,
             saturation_effort=10000,
-            velocity_limit=1.0,
+            velocity_limit=1.0,  # 0.0333
             stiffness=10000.0,
             damping=200,
         ),
