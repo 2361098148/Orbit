@@ -102,8 +102,8 @@ class UniformVelocityCommandGenerator(CommandGeneratorBase):
         # -- ang vel yaw - rotation around z
         self.vel_command_b[env_ids, 2] = r.uniform_(*self.cfg.ranges.ang_vel_z)
         # set small commands to zero
-        # self.vel_command_b[env_ids, :2] *= (torch.norm(self.vel_command_b[env_ids, :2], dim=1) > self.cfg.ranges.min_vel).unsqueeze(1)
-        # self.vel_command_b[env_ids, 2] *= (torch.abs(self.vel_command_b[env_ids, 2]) > self.cfg.ranges.min_vel)
+        self.vel_command_b[env_ids, :2] *= (torch.norm(self.vel_command_b[env_ids, :2], dim=1) > self.cfg.ranges.min_vel).unsqueeze(1)
+        self.vel_command_b[env_ids, 2] *= (torch.abs(self.vel_command_b[env_ids, 2]) > self.cfg.ranges.min_vel)
         # heading target
         if self.cfg.heading_command:
             self.heading_target[env_ids] = r.uniform_(*self.cfg.ranges.heading)
@@ -129,7 +129,7 @@ class UniformVelocityCommandGenerator(CommandGeneratorBase):
                 max=self.cfg.ranges.ang_vel_z[1],
             )
             # set small commands to zero
-            # self.vel_command_b[env_ids, 2] *= (torch.abs(self.vel_command_b[env_ids, 2]) > self.cfg.ranges.min_vel)
+            self.vel_command_b[env_ids, 2] *= (torch.abs(self.vel_command_b[env_ids, 2]) > self.cfg.ranges.min_vel)
         # Enforce standing (i.e., zero velocity command) for standing envs
         # TODO: check if conversion is needed
         standing_env_ids = self.is_standing_env.nonzero(as_tuple=False).flatten()

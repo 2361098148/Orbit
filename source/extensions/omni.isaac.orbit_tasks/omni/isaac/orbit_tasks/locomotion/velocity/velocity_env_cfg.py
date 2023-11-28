@@ -219,7 +219,12 @@ class RewardsCfg:
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
     # --stand still
-    stand_still = RewTerm(func=mdp.stand_still, weight=-5.0)
+    stand_still_joint = RewTerm(func=mdp.stand_still_joint, weight=-5.0)
+    stand_still_foot = RewTerm(
+        func=mdp.stand_still_foot, 
+        weight=-0.2,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*MidLeg4"), "threshold": 1.0},
+    )
 
 
 @configclass
@@ -265,12 +270,12 @@ class LocomotionVelocityRoughEnvCfg(RLTaskEnvCfg):
     commands: UniformVelocityCommandGeneratorCfg = UniformVelocityCommandGeneratorCfg(
         asset_name="robot",
         resampling_time_range=(10.0, 10.0),
-        rel_standing_envs=0.02,
+        rel_standing_envs=0.5,
         rel_heading_envs=1.0,
         heading_command=True,
         debug_vis=True,
         ranges=UniformVelocityCommandGeneratorCfg.Ranges(
-            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi), min_vel=0.05
+            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi), min_vel=0.1
         ),
     )
     # MDP settings

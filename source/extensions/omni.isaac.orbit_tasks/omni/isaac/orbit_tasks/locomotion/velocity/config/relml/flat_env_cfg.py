@@ -34,7 +34,8 @@ class ReLMLFlatEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.undesired_contacts.weight = 0.0   # -1.0
         self.rewards.flat_orientation_l2.weight = -2.0    # 0.0
         self.rewards.dof_pos_limits.weight = 0.0  # 0.0
-        self.rewards.stand_still.weight = -0.0  # -0.5 先不考虑
+        self.rewards.stand_still_joint.weight = -0.5  # -0.5 先不考虑
+        self.rewards.stand_still_foot.weight = -0.5  # 0.0
  
         # change body and joint names
         # TODO: Change to .*foot once we make a new USD for the robot

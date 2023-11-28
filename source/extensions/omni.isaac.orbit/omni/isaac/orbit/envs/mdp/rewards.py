@@ -238,7 +238,7 @@ Standing rewards.
 """
 
 
-def stand_still(env: RLTaskEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def stand_still_joint(env: RLTaskEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Reward for standing still."""
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
@@ -247,3 +247,16 @@ def stand_still(env: RLTaskEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robo
     # compute the joint movement
     unstable_joint_move = torch.sum(torch.abs(asset.data.joint_pos[:, asset.ordered_actuator_index] - asset.data.default_joint_pos[:, asset.ordered_actuator_index]), dim=1)
     return unstable_joint_move * zero_cmd_mask
+
+
+def stand_still_foot(env: RLTaskEnv, threshold: float, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Reward for standing still."""
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    # cal the zero cmd envids
+    zero_cmd_mask = (torch.norm(env.command_manager.command[:, :2], dim=1) < 0.1) * (torch.abs(env.command_manager.command[:, 2]) < 0.1)
+    # check if contact force is above threshold
+    net_contact_forces = contact_sensor.data.net_forces_w_history
+    is_contact = torch.max(torch.norm(net_contact_forces[:, :, sensor_cfg.body_ids], dim=-1), dim=1)[0] > threshold
+    is_not_all_foot_contact = ~ torch.all(is_contact, dim=1, keepdim=False)
+    return (is_not_all_foot_contact * zero_cmd_mask).float()
