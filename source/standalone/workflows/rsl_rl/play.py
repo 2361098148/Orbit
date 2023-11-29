@@ -43,6 +43,7 @@ import traceback
 
 import carb
 from rsl_rl.runners import OnPolicyRunner
+# from omni.isaac.orbit.utils.math import euler_xyz_from_quat
 
 import omni.isaac.contrib_tasks  # noqa: F401
 from omni.isaac.orbit.utils.logger import Logger
@@ -113,6 +114,8 @@ def main():
                         'dof_vel_0': env.env.scene.articulations['robot'].data.joint_vel[robot_index, env.env.scene.articulations['robot'].ordered_actuator_index[0]].item(),
                         'dof_vel_1': env.env.scene.articulations['robot'].data.joint_vel[robot_index, env.env.scene.articulations['robot'].ordered_actuator_index[1]].item(),
                         'dof_vel_2': env.env.scene.articulations['robot'].data.joint_vel[robot_index, env.env.scene.articulations['robot'].ordered_actuator_index[2]].item(),
+                        # 'cmd_heading': env.env.command_manager.pose_command_b[robot_index, 5].item(),
+                        # 'robot_heading': euler_xyz_from_quat((env.env.scene.articulations['robot'].data.root_state_w[robot_index, 3:7]).unsqueeze(0))[2].item(),
                     }
                 )
             elif i == stop_state_log:

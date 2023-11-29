@@ -106,7 +106,12 @@ class Logger:
         if log["dof_vel_2"]: a.plot(time, log["dof_vel_2"], label='measured')
         a.set(xlabel='time [s]', ylabel='Velocity [rad]', title='DOF Velocity')
         a.legend()
-        
+        # # plot heading
+        # a = axs[2, 0]
+        # if log["cmd_heading"]: a.plot(time, log["cmd_heading"], label='cmd')
+        # if log["robot_heading"]: a.plot(time, log["robot_heading"], label='robot')
+        # a.set(xlabel='time [s]', ylabel='Heading [rad]', title='Heading')
+
         plt.show()
 
     def print_rewards(self):

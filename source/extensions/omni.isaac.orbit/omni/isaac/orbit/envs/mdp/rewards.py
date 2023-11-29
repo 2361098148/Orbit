@@ -233,6 +233,23 @@ def track_ang_vel_z_exp(
     return torch.exp(-ang_vel_error / std**2)
 
 
+def track_pos_exp(
+    env: RLTaskEnv, std: float
+) -> torch.Tensor:
+    """Reward tracking of pose commands using exponential kernel."""
+    total_pos_error = torch.sum(torch.square(env.command_manager.command[:, :3]), dim=-1)
+    return torch.exp(-total_pos_error / std**2)
+
+
+def track_rot_exp(
+    env: RLTaskEnv, std: float
+) -> torch.Tensor:
+    """Reward tracking of pose commands using exponential kernel."""
+    "先只考虑 yaw角"
+    total_rot_error = torch.sum(torch.square(env.command_manager.command[:, 5]), dim=-1)
+    return torch.exp(-total_rot_error / std**2)
+
+
 """
 Standing rewards.
 """

@@ -64,6 +64,8 @@ class UniformPoseCommandGenerator(CommandGeneratorBase):
         self.pose_command_b = torch.zeros(self.num_envs, 7, device=self.device)
         self.pose_command_b[:, 3] = 1.0
         self.pose_command_w = torch.zeros_like(self.pose_command_b)
+        self.pose_command_w[:, 3] = 1.0
+        self.pose_error = torch.zeros(self.num_envs, 6, device=self.device)
         # -- metrics
         self.metrics["position_error"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["orientation_error"] = torch.zeros(self.num_envs, device=self.device)
@@ -84,7 +86,8 @@ class UniformPoseCommandGenerator(CommandGeneratorBase):
 
         The first three elements correspond to the position, followed by the quaternion orientation in (w, x, y, z).
         """
-        return self.pose_command_b
+        # return self.pose_command_b
+        return self.pose_error
 
     """
     Implementation specific functions.
@@ -105,27 +108,26 @@ class UniformPoseCommandGenerator(CommandGeneratorBase):
         self.pose_command_b[env_ids, 3:] = quat_from_euler_xyz(
             euler_angles[:, 0], euler_angles[:, 1], euler_angles[:, 2]
         )
+        # transform command from base frame to simulation world frame
+        self.pose_command_w[env_ids, :3], self.pose_command_w[env_ids, 3:] = combine_frame_transforms(
+            self.robot.data.default_root_state[env_ids, :3] + self._env.scene.env_origins[env_ids],
+            self.robot.data.default_root_state[env_ids, 3:7],
+            self.pose_command_b[env_ids, :3],
+            self.pose_command_b[env_ids, 3:],
+        )
 
     def _update_command(self):
-        pass
-
-    def _update_metrics(self):
-        # transform command from base frame to simulation world frame
-        self.pose_command_w[:, :3], self.pose_command_w[:, 3:] = combine_frame_transforms(
-            self.robot.data.root_pos_w,
-            self.robot.data.root_quat_w,
-            self.pose_command_b[:, :3],
-            self.pose_command_b[:, 3:],
-        )
-        # compute the error
-        pos_error, rot_error = compute_pose_error(
+        # 计算当前的位姿与目标位姿之间的误差
+        self.pose_error[:, :3], self.pose_error[:, 3:6] = compute_pose_error(
             self.pose_command_w[:, :3],
             self.pose_command_w[:, 3:],
             self.robot.data.body_state_w[:, self.body_idx, :3],
             self.robot.data.body_state_w[:, self.body_idx, 3:7],
         )
-        self.metrics["position_error"] = torch.norm(pos_error, dim=-1)
-        self.metrics["orientation_error"] = torch.norm(rot_error, dim=-1)
+
+    def _update_metrics(self):
+        self.metrics["position_error"] = torch.norm(self.pose_error[:, :3], dim=-1)
+        self.metrics["orientation_error"] = torch.norm(self.pose_error[:, 3:6], dim=-1)
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         # create markers if necessary for the first tome

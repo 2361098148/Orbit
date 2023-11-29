@@ -25,6 +25,17 @@ class ReLMLFlatEnvCfg(LocomotionVelocityRoughEnvCfg):
         # {'.*dof1': 0.5, '.*dof2': 0.1, '.*dof3': 0.5}
         self.actions.joint_pos.scale = {'.*dof1': 0.45, '.*dof2': 0.09, '.*dof3': 0.45}  
         # override rewards
+        # self.rewards.lin_vel_z_l2.weight = -0.2  # -2.0
+        # self.rewards.ang_vel_xy_l2.weight = 0.0  # -0.05
+        # self.rewards.dof_torques_l2.weight = 0.0  # -1.0e-5
+        # self.rewards.dof_acc_l2.weight = 0.0  # -2.5e-7
+        # self.rewards.action_rate_l2.weight = -0.00  # -0.01
+        # self.rewards.feet_air_time.weight = 0.0  # 0.5
+        # self.rewards.undesired_contacts.weight = 0.0   # -1.0
+        # self.rewards.flat_orientation_l2.weight = -0.2    # 2.0
+        # self.rewards.dof_pos_limits.weight = 0.0  # 0.0
+        # self.rewards.stand_still_joint.weight = -0.  # -0.5 先不考虑
+        # self.rewards.stand_still_foot.weight = -0.  # 0.0
         self.rewards.lin_vel_z_l2.weight = -2.0   # -2.0
         self.rewards.ang_vel_xy_l2.weight = 0.0  # -0.05
         self.rewards.dof_torques_l2.weight = 0.0  # -1.0e-5
@@ -55,6 +66,7 @@ class ReLMLFlatEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.randomization.add_base_mass = None
         self.base_external_force_torque = None
         self.randomization.push_robot = None
+        # self.randomization.reset_robot_joints = None
 
 class ReLMLFlatEnvCfg_PLAY(ReLMLFlatEnvCfg):
     def __post_init__(self) -> None:

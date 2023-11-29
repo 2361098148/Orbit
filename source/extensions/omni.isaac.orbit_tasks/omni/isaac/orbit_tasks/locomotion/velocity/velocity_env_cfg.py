@@ -10,6 +10,7 @@ from dataclasses import MISSING
 
 import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.assets import ArticulationCfg, AssetBaseCfg
+# from omni.isaac.orbit.command_generators import UniformPoseCommandGeneratorCfg
 from omni.isaac.orbit.command_generators import UniformVelocityCommandGeneratorCfg
 from omni.isaac.orbit.envs import RLTaskEnvCfg
 from omni.isaac.orbit.managers import CurriculumTermCfg as CurrTerm
@@ -108,6 +109,8 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         actions = ObsTerm(func=mdp.last_action)
+        # current_pose = ObsTerm(func=mdp.current_pose)
+        # target_pose = ObsTerm(func=mdp.target_pose)
         height_scan = ObsTerm(
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
@@ -161,6 +164,8 @@ class RandomizationCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
+            # "pose_range": {"x": (-0., 0.), "y": (-0., 0.), "z": (-0., 0.), 
+            #                "pitch": (-0., 0.), "roll": (-0., 0.), "yaw": (-0., 0.)},
             "pose_range": {"x": (-0., 0.), "y": (-0., 0.), "z": (-0.1, 0.1), 
                            "pitch": (-0.2, 0.2), "roll": (-0.2, 0.2), "yaw": (-3.14, 3.14)},
             "velocity_range": {
@@ -199,6 +204,8 @@ class RewardsCfg:
     # -- task
     track_lin_vel_xy_exp = RewTerm(func=mdp.track_lin_vel_xy_exp, weight=1.0, params={"std": math.sqrt(0.25)})
     track_ang_vel_z_exp = RewTerm(func=mdp.track_ang_vel_z_exp, weight=0.5, params={"std": math.sqrt(0.25)})
+    # track_pos_exp = RewTerm(func=mdp.track_pos_exp, weight=0.0, params={"std": math.sqrt(10)})
+    # track_rot_exp = RewTerm(func=mdp.track_rot_exp, weight=1.0, params={"std": math.sqrt(1000)})
     # -- penalties
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
@@ -267,6 +274,14 @@ class LocomotionVelocityRoughEnvCfg(RLTaskEnvCfg):
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
+    # commands: UniformPoseCommandGeneratorCfg = UniformPoseCommandGeneratorCfg(
+    #     asset_name="robot",
+    #     body_name="base",
+    #     resampling_time_range=(10.0, 10.0),
+    #     debug_vis=True,
+    #     ranges=UniformPoseCommandGeneratorCfg.Ranges(
+    #         pos_x=(-0.0, 0.0), pos_y=(-0.0, 0.0), pos_z=(-0.0, 0.0), roll=(-0., 0.), pitch=(-0., 0.), yaw=(-math.pi / 10, math.pi / 10)
+    #     ),
     commands: UniformVelocityCommandGeneratorCfg = UniformVelocityCommandGeneratorCfg(
         asset_name="robot",
         resampling_time_range=(10.0, 10.0),

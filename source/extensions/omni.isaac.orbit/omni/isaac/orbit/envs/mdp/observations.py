@@ -47,6 +47,20 @@ def projected_gravity(env: BaseEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("
     return asset.data.projected_gravity_b
 
 
+def current_pose(env: BaseEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Current pose of the asset's root frame."""
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    position = asset.data.root_pos_w
+    rotation = asset.data.root_quat_w
+    return torch.cat([position, rotation], dim=-1)
+
+
+def target_pose(env: RLTaskEnv) -> torch.Tensor:
+    """Target pose of the asset's root frame."""
+    return env.command_manager.pose_command_w
+
+
 """
 Joint state.
 """
